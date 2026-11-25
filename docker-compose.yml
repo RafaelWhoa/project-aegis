@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aegis_hospital_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aegis_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aegis_secret_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-hospital_aegis}
+      TZ: ${TZ:-UTC}
+      PGTZ: ${TZ:-UTC}
+    ports:
+      # Porta 5432 já está em uso no host; mapeando para 5433 por padrão
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - aegis_pgdata:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aegis_admin} -d ${POSTGRES_DB:-hospital_aegis}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - aegis_net
+
+volumes:
+  aegis_pgdata:
+    name: aegis_hospital_pgdata
+
+networks:
+  aegis_net:
+    name: aegis_hospital_network
+    driver: bridge
